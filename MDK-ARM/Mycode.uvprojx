@@ -403,6 +403,11 @@
               <FilePath>..\MySrc\pid.c</FilePath>
             </File>
             <File>
+              <FileName>remote.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\MySrc\remote.c</FilePath>
+            </File>
+            <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/main.c</FilePath>
@@ -416,6 +421,11 @@
               <FileName>can.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/can.c</FilePath>
+            </File>
+            <File>
+              <FileName>dma.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Core/Src/dma.c</FilePath>
             </File>
             <File>
               <FileName>usart.c</FileName>

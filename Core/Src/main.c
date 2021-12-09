@@ -20,6 +20,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "can.h"
+#include "dma.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -27,6 +28,7 @@
 /* USER CODE BEGIN Includes */
 #include "pid.h"
 #include "can_receive.h"
+#include "remote.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -52,6 +54,8 @@ int speed_step_sign = +1;
 #define SpeedStep 2000
 PID_Regulator_t pid[4];
 const motor_measure_t* measure[4];
+const RC_ctrl_t* remoter;
+
 float out[4];
 int16_t message[8];
 float kp[4]={0.42,1,1,1};
@@ -139,10 +143,12 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_CAN1_Init();
   MX_USART6_UART_Init();
   MX_CAN2_Init();
   MX_USART2_UART_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 	for(int i=0;i<4;i++)
 	{
@@ -150,13 +156,16 @@ int main(void)
 	}
 	CAN1_Init();
 	
+	HAL_UART_Receive_DMA(&huart1,teledata_rx,sizeof(teledata_rx));
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-		Key_Scan();
+		
+		remoter=get_remote_control_point();
+		
 		for(int i=0; i<4; i++)
     {	
 			measure[i]=get_Chassis_Motor_Measure_Point(i);
@@ -164,10 +173,11 @@ int main(void)
 		}
 		CAN_CMD_Chassis(out[0],out[1],out[2],out[3]);
 		
-		message[0]=measure[0]->speed_rpm;
-		message[1]=set_spd;
-		message[2]=pid[0].Pout;
-		message[3]=pid[0].Iout;
+		
+		for(int i=0; i<4; i++)
+    {	
+			message[i]=remoter->rc.ch[i];
+		}
 		sendware(message,sizeof(message));
 		HAL_Delay(10);
 		
@@ -229,6 +239,16 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 	HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rx_header, rx_data);
 	CAN1_Getdata(&rx_header, rx_data);
 }
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+	if(huart->Instance==USART1)
+	{
+		SBUS_TO_RC(teledata_rx,&rc_ctrl);
+		RC_data_is_error();
+	}
+}
+
 /* USER CODE END 4 */
 
 /**
